@@ -17,8 +17,10 @@ def main():
     print "Variable: ", melted['variable']
     print "Value: ", melted['value']
 
+    print "Index: ", melted.ix[0]
+    
+
     melted.to_csv('../output.csv')
 
-        
 if __name__=="__main__":
     main()
