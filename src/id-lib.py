@@ -1,6 +1,10 @@
 import pandas as pd
 import os
 import matplotlib as mpl
+import numpy as np
+
+
+from datetime import datetime
 
 def idProcess(filename):
 
@@ -11,19 +15,38 @@ def idProcess(filename):
 
     df = pd.read_csv(filename, sep=',', header=None, names=cnames, na_values=['NA'], parse_dates=[1])
 
-    # Problems with stacking, not getting correct data.  Maybe try a pivot.
+    #Melt data to reorganize into columnar fashion.
     melted = pd.core.reshape.melt(df, id_vars=['Date'])
 
-    print "Date: ", melted['Date']
-    print "Variable: ", melted['variable']
-    print "Value: ", melted['value']
-
-    print "Index: ", melted.ix[0]
+    dates = np.array(melted['Date'])
+    times = np.array(melted['variable'])
+    values = np.array(melted['value'])
+  
+    datetimes_s = np.datetime64(dates + " " + times)
+    drange = np.arange(0, len(datetimes_s), 1)
     
 
-    melted.to_csv('../data/output/output.csv')
+    data1 = np.array([drange, datetimes_s])
+    data2 = np.array([drange, values])
 
-#    plot(melted['Date'], melted['value'])
+    dataset1 = pd.DataFrame(data1.T, columns=['index', 'datetime']) 
+    dataset2 = pd.DataFrame(data2.T, columns=['index', 'values'])
+
+    
+
+    print "dataset1 index: ", dataset1.index
+    print "dataset2 index: ", dataset2.index
+    
+    
+
+    dataset_c = pd.merge(dataset1, dataset2, how='left', on='index', left_index=False, suffixes=['_1', '_2']	)
+    print "dataset_c: ", dataset_c
+
+    print "dataset_c index: ", dataset_c.index
+
+    melted.to_csv('../data/output/output.csv')
+    dataset_c.to_csv('../data/output/test.csv')
+
 
 """
 def plot(x, y)
