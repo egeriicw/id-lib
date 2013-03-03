@@ -2,9 +2,8 @@ import pandas as pd
 import os
 import matplotlib as mpl
 import numpy as np
-
-
-from datetime import datetime
+import scipy.stats.mstats as mstats
+import datetime as dt
 
 def idProcess(filename):
 
@@ -13,18 +12,33 @@ def idProcess(filename):
 
     # Import data
 
-    df = pd.read_csv(filename, sep=',', header=None, names=cnames, na_values=['NA'], parse_dates=[1])
+    parse_dates = [0]
+
+    df = pd.read_csv(filename, sep=',', header=None, names=cnames, na_values=['NA'], parse_dates=parse_dates)
+
+    print df
+
 
     #Melt data to reorganize into columnar fashion.
     melted = pd.core.reshape.melt(df, id_vars=['Date'])
 
+    print "Melted: ", melted
+    
     dates = np.array(melted['Date'])
-    times = np.array(melted['variable'])
+    times = List(melted['variable'])
     values = np.array(melted['value'])
+
+
+    print "Dates: ", dates
+    print "times: ", type(times[1])
+    print "values: ", values
+
+    print "dtype_test: ", values.dtype
   
     datetimes_s = np.datetime64(dates + " " + times)
-    drange = np.arange(0, len(datetimes_s), 1)
     
+    
+    drange = np.arange(0, len(datetimes_s), 1)
 
     data1 = np.array([drange, datetimes_s])
     data2 = np.array([drange, values])
@@ -32,21 +46,12 @@ def idProcess(filename):
     dataset1 = pd.DataFrame(data1.T, columns=['index', 'datetime']) 
     dataset2 = pd.DataFrame(data2.T, columns=['index', 'values'])
 
+    dataset_m = pd.merge(dataset1, dataset2, how='left', on='index', right_index=False)
     
-
-    print "dataset1 index: ", dataset1.index
-    print "dataset2 index: ", dataset2.index
-    
-    
-
-    dataset_c = pd.merge(dataset1, dataset2, how='left', on='index', left_index=False, suffixes=['_1', '_2']	)
-    print "dataset_c: ", dataset_c
-
-    print "dataset_c index: ", dataset_c.index
-
     melted.to_csv('../data/output/output.csv')
-    dataset_c.to_csv('../data/output/test.csv')
 
+
+    return dataset_m
 
 """
 def plot(x, y)
@@ -57,7 +62,22 @@ def plot(x, y)
 def main():
     print "Success"
     filename = "../data/input/ckid.csv"
-    idProcess(filename)
+    dataset_r = idProcess(filename)
+    dataset_r.to_csv('../data/output/returntest.csv')
+
+
+    """
+    dataset_copy = dataset_r.copy(deep=True)
+    """
+    dataset_r['values'] = dataset_r['values'].fillna(0)    
+    dataset_argsort = dataset_r['values'].apply(np.argsort, axis=0)
+
+    print "...sorted..."
+    dataset_r.to_csv('../data/output/outtest.csv')
+    #print "...complete..."
+    dataset_rank = dataset_r.rank(axis=0, method='max', ascending=True)
+    print dataset_rank['values']
+    dataset_rank.to_csv('../data/output/ranktest.csv')
 
 if __name__=="__main__":
     main()
